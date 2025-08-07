@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 
 export default function Home() {
   const [unlocked, setUnlocked] = useState(false);
@@ -10,7 +10,7 @@ export default function Home() {
     "EYEem", "TEAMup", "ARt", "MEMOIR"
   ];
 
-function unlockVault(e: React.FormEvent) {
+  function unlockVault(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (code === "override") setUnlocked(true);
   }
