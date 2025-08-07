@@ -10,7 +10,7 @@ export default function Home() {
     "EYEem", "TEAMup", "ARt", "MEMOIR"
   ];
 
-  function unlockVault(e) {
+function unlockVault(e: React.FormEvent) {
     e.preventDefault();
     if (code === "override") setUnlocked(true);
   }
