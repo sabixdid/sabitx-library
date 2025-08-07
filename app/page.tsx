@@ -18,42 +18,33 @@ export default function Home() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #0f2027 0%, #2c5364 100%)",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
+      background: "linear-gradient(145deg,#0f0f0f,#18181b)",
+      display: "flex", alignItems: "center", justifyContent: "center"
     }}>
       <div style={{
-        background: "rgba(24,24,27,0.92)",
-        border: "1px solid #222",
-        boxShadow: "0 8px 32px 0 rgba(0,0,0,0.3)",
-        backdropFilter: "blur(10px)",
-        borderRadius: 32,
+        background: "rgba(20,20,24,0.95)",
+        borderRadius: 28,
+        boxShadow: "0 10px 30px #00000070",
+        border: "1px solid #333",
         padding: 36,
-        width: "90vw",
-        maxWidth: 370,
-        margin: "auto",
+        width: "90vw", maxWidth: 360,
         textAlign: "center",
-        transition: "box-shadow 0.25s",
+        position: "relative",
+        overflow: "hidden"
       }}>
-        {/* Optional: add your logo here */}
-        {/* <img src="/logo.svg" alt="Sabit X Logo" style={{ width: 56, margin: "0 auto 18px" }} /> */}
-
         <h1 style={{
-          fontSize: 32,
-          fontWeight: 900,
+          fontSize: 28,
+          fontWeight: 800,
           color: "#fb923c",
-          marginBottom: 28,
-          letterSpacing: ".04em",
-          fontFamily: "inherit",
-          textShadow: "0 2px 8px #0008",
+          marginBottom: 30,
+          letterSpacing: "0.05em",
+          textShadow: "0 2px 6px #00000080"
         }}>
           SABIT X VAULT
         </h1>
 
         {!unlocked ? (
-          <form onSubmit={unlockVault} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <form onSubmit={unlockVault} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <input
               type="password"
               placeholder="Enter Vault Code"
@@ -61,63 +52,46 @@ export default function Home() {
               onChange={e => setCode(e.target.value)}
               autoFocus
               style={{
-                background: "rgba(36,36,40,0.96)",
-                border: "1.5px solid #353535",
+                background: "#262626",
+                border: "none",
+                padding: 14,
+                borderRadius: 12,
                 color: "#fff",
-                fontSize: 18,
-                fontWeight: 500,
-                padding: 16,
-                borderRadius: 14,
-                marginBottom: 4,
-                outline: "none",
-                textAlign: "center",
-                letterSpacing: 2,
-                boxShadow: "0 1.5px 10px #1116",
-                transition: "border 0.2s, box-shadow 0.2s",
+                fontSize: 16,
+                boxShadow: "0 4px 10px #00000040"
               }}
             />
             <button
               type="submit"
               style={{
-                background: "linear-gradient(90deg, #fb923c 70%, #ffbc70 100%)",
-                color: "#222",
-                fontWeight: 800,
-                fontSize: 18,
+                background: "linear-gradient(90deg,#fb923c,#ffa75a)",
+                color: "#111",
+                fontWeight: 700,
+                padding: 14,
+                borderRadius: 12,
                 border: "none",
-                borderRadius: 14,
-                padding: "16px 0",
-                marginTop: 6,
-                boxShadow: "0 2px 10px #fb923c50",
                 cursor: "pointer",
-                letterSpacing: 2,
+                boxShadow: "0 4px 12px #fb923c70",
                 textTransform: "uppercase",
-                transition: "background 0.15s, box-shadow 0.15s",
-                filter: code ? "brightness(1)" : "brightness(0.8)",
-                opacity: code ? 1 : 0.8,
-              }}
-              disabled={!code}
-            >
-              UNLOCK
+                letterSpacing: "0.1em"
+              }}>
+              Unlock
             </button>
           </form>
         ) : (
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr",
-            gap: 18, marginTop: 18,
+            gap: 14, marginTop: 20
           }}>
             {sections.map(section => (
               <div key={section} style={{
-                background: "rgba(36,36,40,0.94)",
-                padding: 22,
-                borderRadius: 16,
-                fontWeight: 700,
-                fontSize: 16,
-                boxShadow: "0 2px 8px #1116",
+                background: "#262626",
+                padding: 18,
+                borderRadius: 12,
+                fontWeight: 600,
                 color: "#fb923c",
-                border: "1px solid #282828",
-                letterSpacing: 1.5,
-                textShadow: "0 2px 8px #000a",
-                margin: 2,
+                fontSize: 14,
+                boxShadow: "0 2px 8px #00000050",
                 cursor: "pointer",
                 userSelect: "none"
               }}>
@@ -128,12 +102,9 @@ export default function Home() {
         )}
 
         <div style={{
-          marginTop: 34,
-          color: "#bdbdbd",
-          fontSize: 13,
-          letterSpacing: 1.2,
-          opacity: 0.9,
-          textShadow: "0 1px 5px #0007",
+          color: "#777",
+          fontSize: 12,
+          marginTop: 26
         }}>
           © 2025 SABIT INC. | sabit@sabitinc.com
         </div>
