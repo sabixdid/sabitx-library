@@ -78,14 +78,14 @@ export default function Page() {
         experiences crafted for creators, rebels, and operators. No passwords – just dive in.
       </motion.p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
-        {sections.map((section, idx) => (
+        {sections.map((section) => (
           <Link key={section.slug} href={`/${section.slug}`}>
             <motion.div
               whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="card cursor-pointer"
+              className="card cursor-pointer bg-[#18181b] border border-[#333] rounded-2xl p-6 shadow-lg hover:shadow-orange-500/30 transition-shadow"
             >
-              <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>
+              <h2 className="text-xl font-semibold mb-2 text-orange-400">
                 {section.title}
               </h2>
               <p className="text-sm text-gray-400">
