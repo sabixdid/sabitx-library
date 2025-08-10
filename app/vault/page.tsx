@@ -1,3 +1,18 @@
+git add app/vault/page.tsx
+git commit -m "💬 Add Vault chat/audio page with sharable link"
+git push
+
+npx vercel deploy --prod
+{
+  title: "VAULT Mesh",
+  slug: "vault",
+  description: "Offline audio chat. No Wi‑Fi. No cellular. Air‑gapped.",
+}
+git add app/vault/page.tsx
+git commit -m "💬 Add Vault chat/audio page with sharable link"
+git push
+
+npx vercel deploy --prod
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import SabitxVaultOfflineAudioMesh from "../../components/SabitxVaultOfflineAudioMesh";
