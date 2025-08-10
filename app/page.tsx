@@ -1,10 +1,5 @@
 "use client";
 
-// The landing page for the Sabit X Vault. This page showcases each section of the
-// platform using a premium, parallax-inspired card grid. The cards animate
-// slightly on hover to provide depth and invite exploration. No password is
-// required – the vault is wide open to everyone.
-
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -55,6 +50,11 @@ const sections: Section[] = [
     slug: 'memoir',
     description: 'A personal log and story of the maker behind SABITX.',
   },
+  {
+    title: 'VAULT Mesh',
+    slug: 'vault',
+    description: 'Offline audio chat. No Wi‑Fi. No cellular. Air‑gapped.',
+  },
 ];
 
 export default function Page() {
@@ -100,9 +100,4 @@ export default function Page() {
       </footer>
     </main>
   );
-}
-{
-  title: 'VAULT Mesh',
-  slug: 'vault',
-  description: 'Offline audio chat. No Wi-Fi. No cellular. Air-gapped.',
 }
