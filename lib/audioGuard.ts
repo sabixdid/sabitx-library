@@ -6,8 +6,9 @@ export function isBrowser(): boolean {
 
 export function isSecureContextOK(): boolean {
   if (!isBrowser()) return false;
-  const loc = window.location;
-  return Boolean((window as any).isSecureContext) || loc.hostname === "localhost" || loc.hostname === "127.0.0.1";
+  const h = window.location.hostname;
+  // getUserMedia requires HTTPS or localhost
+  return (window as any).isSecureContext || h === "localhost" || h === "127.0.0.1";
 }
 
 export async function queryMicPermission(): Promise<PermState> {
@@ -15,33 +16,31 @@ export async function queryMicPermission(): Promise<PermState> {
   const perms = (navigator as any).permissions;
   if (!perms?.query) return "unknown";
   try {
-    const res = await perms.query({ name: "microphone" as PermissionName });
-    return (res.state as PermState) ?? "unknown";
+    // Some TS DOM libs don’t include "microphone" in PermissionName. Cast to any to avoid build errors.
+    const res = await perms.query({ name: "microphone" as any });
+    const state = (res && (res as any).state) || "unknown";
+    return state as PermState;
   } catch {
     return "unknown";
   }
 }
 
 export function mapGumError(err: any): string {
-  const name = err?.name || err?.constructor?.name || "";
+  const name = err?.name || "";
   switch (name) {
-    case "NotAllowedError":
-      return "Microphone permission was denied or the context is blocked. Use HTTPS/localhost and allow mic.";
-    case "NotFoundError":
-      return "No input device found. Plug in or enable a microphone.";
-    case "NotReadableError":
-      return "Microphone is busy or unavailable. Close other apps that use it.";
-    case "OverconstrainedError":
-      return "Requested audio constraints cannot be satisfied by this device.";
-    case "SecurityError":
-      return "Blocked by browser security policy. Avoid sandboxed iframes and use HTTPS.";
-    default:
-      return err?.message || "Failed to access microphone.";
+    case "NotAllowedError": return "Microphone permission denied or blocked. Use HTTPS/localhost and allow mic.";
+    case "NotFoundError": return "No input device found. Plug in or enable a microphone.";
+    case "NotReadableError": return "Microphone busy or not readable. Close other apps using it.";
+    case "OverconstrainedError": return "Requested constraints cannot be satisfied by available devices.";
+    case "SecurityError": return "Blocked by browser security policy. Avoid sandboxed iframes and use HTTPS.";
+    case "AbortError": return "The audio request was aborted by the browser.";
+    default: return err?.message || "Failed to access microphone.";
   }
 }
 
 export async function ensureAudioContext(): Promise<AudioContext> {
-  if (!isBrowser()) throw new Error("Not in a browser environment.");
+  if (!isBrowser()) throw new Error("WebAudio requires a browser environment.");
   const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!Ctx) throw new Error("WebAudio not supported in this browser.");
+  if (!Ctx) throw new Error("WebAudio not supported.");
   return new Ctx({ sampleRate: 48000 });
+}
