@@ -45,4 +45,3 @@ export async function ensureAudioContext(): Promise<AudioContext> {
   const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
   if (!Ctx) throw new Error("WebAudio not supported in this browser.");
   return new Ctx({ sampleRate: 48000 });
-}~/Documents/GitHub/nextjs-boilerplate
