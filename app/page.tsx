@@ -101,3 +101,8 @@ export default function Page() {
     </main>
   );
 }
+{
+  title: 'VAULT Mesh',
+  slug: 'vault',
+  description: 'Offline audio chat. No Wi-Fi. No cellular. Air-gapped.',
+}
