@@ -1,4 +1,11 @@
-"use client";
+<p className="mt-2 text-xs text-neutral-400">
+  Permission: {perm}. Secure: {String(secure)}.
+</p><button
+  onClick={() => sendMessage("VAULT ONLINE")}
+  className="mt-3 px-3 py-2 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-semibold"
+>
+  Transmit Signal
+</button>import { sendMessage } from "../lib/audioModem";"use client";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ensureAudioContext,
