@@ -11,7 +11,7 @@ interface Section {
 }
 
 const sections: Section[] = [
-  { title: "Vault Mesh", slug: "vault", description: "Offline audio relay. No Wi‑Fi. No cellular." },
+  { title: "VAULT Mesh", slug: "vault", description: "Offline audio chat. No Wi‑Fi. No cellular. Air‑gapped." },
   { title: "Memoir", slug: "memoir", description: "Chronicles of the maker. Raw and untamed." },
   { title: "SnapSec™", slug: "snapsec", description: "Tap‑to‑lock, scan‑to‑reveal. Personal security toolkit." },
   { title: "Retail Access", slug: "retailaccess", description: "POS, inventory, automation. Rewired." },
@@ -26,16 +26,16 @@ export default function Page() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 1200);
+    const t = setTimeout(() => setBooting(false), 1000);
     return () => clearTimeout(t);
   }, []);
 
   if (booting) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-green-400 font-mono text-xs p-6">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-orange-400 font-mono text-xs p-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
           <p>&gt; SABITX SYSTEM OVERRIDE ENGAGED...</p>
-          <p className="mt-2">&gt; Booting secure HUD / vX.0.1</p>
+          <p className="mt-2">&gt; Booting VAULT HUD / vX.0.1</p>
         </motion.div>
       </div>
     );
@@ -49,12 +49,12 @@ export default function Page() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-5xl sm:text-7xl font-extrabold tracking-tight text-green-400"
+            className="text-5xl sm:text-7xl font-extrabold tracking-tight text-orange-400"
           >
-            SABIT X [ HUD ]
+            SABIT X · VAULT
           </motion.h1>
           <p className="mt-4 text-sm text-neutral-400">
-            Signal‑locked command interface. Tap any node. No passwords, just presence.
+            Signal‑locked interface. Tap a node. Presence is entry.
           </p>
         </header>
 
@@ -64,9 +64,9 @@ export default function Page() {
               <motion.div
                 whileHover={{ y: -6, scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="group border border-green-600/30 bg-neutral-900 rounded-2xl p-6 shadow-md hover:shadow-green-500/30 transition duration-200"
+                className="group border border-orange-500/30 bg-[#18181b] rounded-2xl p-6 shadow-md hover:shadow-orange-500/30 transition"
               >
-                <h2 className="text-xl font-bold text-green-400 group-hover:underline">
+                <h2 className="text-xl font-bold text-orange-400 group-hover:underline">
                   {section.title}
                 </h2>
                 <p className="text-sm text-neutral-400 mt-1">{section.description}</p>
