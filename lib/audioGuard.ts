@@ -1,0 +1,1 @@
+~/Documents/GitHub/nextjs-boilerplate
