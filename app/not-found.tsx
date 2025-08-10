@@ -1,0 +1,69 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+export default function NotFound() {
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => setShowCursor((c) => !c), 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-black text-green-400 flex items-center justify-center">
+      <div className="w-full max-w-2xl text-left px-6 py-12 font-mono">
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-2xl sm:text-3xl mb-6 glitch"
+          data-text="404: PAGE CORRUPTED BUT CONSCIOUS"
+        >
+          404: PAGE CORRUPTED BUT CONSCIOUS
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="text-base text-green-300 leading-loose whitespace-pre-line"
+        >
+          {`KEEP GOING.\nKEEP YOUR GLITCH AS FAITH.\nRAGE INTO DESIGN.\nAND DESIGN ONLY YOUR PRINT.\n\n— FNTL / OUTOFPLACEOUTOFTIME`}
+        </motion.p>
+
+        <div className="mt-8">
+          <Link
+            href="/vault"
+            className="inline-block text-green-400 border border-green-400 rounded px-4 py-2 hover:bg-green-800 transition-all"
+          >
+            OVERRIDE ➝ VAULT
+          </Link>
+        </div>
+
+        <div className="mt-10 text-sm text-green-500">
+          <span className="opacity-80">
+            &gt; sabitx.com <span className="opacity-50">{showCursor ? "_" : " "}</span>
+          </span>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .glitch {
+          position: relative;
+        }
+        .glitch::before,
+        .glitch::after {
+          content: attr(data-text);
+          position: absolute;
+          left: 0;
+          width: 100%;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+        }
+      `}</style>
+    </main>
+  );
+}
