@@ -36,26 +36,29 @@ export default function VaultPage() {
   const WS_URL = "wss://your-relay.example/ws";
 
   return (
-    <main className="min-h-screen w-full bg-black text-white p-6 space-y-6">
-      <header className="space-y-2">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">SABITX · Vault {mode === "audio" ? "Audio Mesh" : "Text Chat"}</h1>
+    <main className="min-h-screen w-full bg-black text-neutral-100 px-6 py-8 space-y-4">
+      <header className="space-y-1">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">
+            SABITX · Vault {mode === "audio" ? "Audio Mesh" : "Text Chat"}
+          </h1>
           <button
             onClick={() => setMode((m) => (m === "audio" ? "text" : "audio"))}
-            className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+            className="px-3 py-2 rounded-lg bg-blue-700 hover:bg-blue-600"
           >
             {mode === "audio" ? "Switch to Text" : "Switch to Audio"}
           </button>
         </div>
 
-        <div className="bg-neutral-900 p-4 rounded-xl space-y-2">
-          <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-neutral-900 rounded-2xl p-4 grid gap-3">
+          <div className="grid gap-2 md:grid-cols-2">
             <div>
               <label className="block text-sm mb-1">Room</label>
               <input
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
-                className="w-full bg-neutral-800 px-3 py-2 rounded-lg outline-none"
+                className="w-full bg-neutral-800 rounded-lg px-3 py-2 outline-none"
+                placeholder="SABITX-OPS"
               />
             </div>
             <div>
@@ -63,15 +66,35 @@ export default function VaultPage() {
               <input
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
-                className="w-full bg-neutral-800 px-3 py-2 rounded-lg outline-none"
+                className="w-full bg-neutral-800 rounded-lg px-3 py-2 outline-none"
+                placeholder="wolf-iron-ember"
               />
             </div>
           </div>
-          <input
-            readOnly
-            value={shareLink}
-            className="w-full mt-2 bg-neutral-800 px-3 py-2 font-mono text-xs rounded-lg"
-          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              readOnly
+              value={shareLink}
+              className="flex-1 bg-neutral-800 rounded-lg px-3 py-2 font-mono text-xs"
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(shareLink).catch(() => {})}
+              className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500"
+            >
+              Copy Link
+            </button>
+            <button
+              onClick={() => setShowConsole(true)}
+              className="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-xs"
+            >
+              Open Ops Console
+            </button>
+          </div>
+
+          <p className="text-xs text-neutral-400">
+            Share the link by SMS — room is in query string, key is in fragment and stays client-side.
+          </p>
         </div>
       </header>
 
@@ -82,15 +105,15 @@ export default function VaultPage() {
       )}
 
       {showConsole && (
-        <div className="fixed bottom-4 right-4 bg-black/80 text-xs text-white border border-neutral-700 p-4 rounded-xl shadow-xl">
-          <div className="flex justify-between mb-2">
-            <strong>SABITX Ops Console</strong>
+        <div className="fixed bottom-4 right-4 bg-black/80 backdrop-blur border border-neutral-700 text-xs text-white rounded-xl px-4 py-3 z-50 shadow-xl">
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-semibold">SABITX Ops Console</div>
             <button onClick={() => setShowConsole(false)} className="text-red-400">✕</button>
           </div>
-          <p>Node: {nick}</p>
+          <p className="opacity-80">Node: {nick}</p>
           <p>Mode: {mode}</p>
           <p>Room: {room}</p>
-          <p>Key: {key ? "•••••" : "(none)"}</p>
+          <p>Pass: {key ? "••••••" : "(none)"}</p>
         </div>
       )}
     </main>
