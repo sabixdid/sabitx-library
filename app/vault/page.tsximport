@@ -1,0 +1,597 @@
+export default function Page() {
+  return <SABITX_MVP />; }git add . git commit -m "🚀 Add full SABITX MVP 
+modules"
+git push origin mainnpm run devimport React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Lock, Radio, PenTool, Shield, Store, Eye, Users, Waves, Crown, Truck, Camera, Mic, Play, Pause, Save, Upload, Download, Calendar, MapPin } from "lucide-react";
+
+// Single-file demo that implements working MVPs for each module without a backend.
+// All data persists to localStorage/IndexedDB and uses browser APIs only.
+// Wire into Next.js by rendering <SABITX_MVP /> in a page.
+
+const ORANGE = "#ff6a00";
+const CARD_BG = "#0e0e0f";
+const CARD_BORDER = "#2b1a12";
+const TEXT_MUTED = "#a3a3a3";
+
+// --------------------------- Utilities ---------------------------
+const useLocal = (key, initial) => {
+  const [state, setState] = useState(() => {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
+  }, [key, state]);
+  return [state, setState];
+};
+
+// WebCrypto helpers for SnapSec
+async function generateKey() {
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt","decrypt"]);
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return { key, b64: btoa(String.fromCharCode(...new Uint8Array(raw))) };
+}
+async function importKey(b64) {
+  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt","decrypt"]);
+}
+async function encryptJson(key, obj) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new TextEncoder().encode(JSON.stringify(obj));
+  const buf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+  return { iv: Array.from(iv), cipher: btoa(String.fromCharCode(...new Uint8Array(buf))) };
+}
+async function decryptJson(key, payload) {
+  const iv = new Uint8Array(payload.iv);
+  const cipher = Uint8Array.from(atob(payload.cipher), c => c.charCodeAt(0));
+  const buf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+  return JSON.parse(new TextDecoder().decode(new Uint8Array(buf)));
+}
+
+// Download helper
+function download(filename, text) {
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ICS generator for EXPRESS
+function toICS(events) {
+  const fmt = (d)=> new Date(d).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");
+  let ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//SABITX//EXPRESS//EN"]; 
+  for (const e of events) {
+    ics.push("BEGIN:VEVENT");
+    ics.push(`UID:${e.id}`);
+    ics.push(`DTSTAMP:${fmt(new Date())}`);
+    ics.push(`DTSTART:${fmt(e.start)}`);
+    ics.push(`DTEND:${fmt(e.end)}`);
+    ics.push(`SUMMARY:${e.title}`);
+    if (e.location) ics.push(`LOCATION:${e.location}`);
+    ics.push("END:VEVENT");
+  }
+  ics.push("END:VCALENDAR");
+  return ics.join("\r\n");
+}
+
+// Simple distance calc for routing (Haversine)
+function haversine(a, b) {
+  const R = 6371; // km
+  const dLat = (b.lat - a.lat) * Math.PI/180;
+  const dLon = (b.lon - a.lon) * Math.PI/180;
+  const lat1 = a.lat * Math.PI/180, lat2 = b.lat * Math.PI/180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+function nearestNeighborRoute(points) {
+  if (points.length <= 1) return points;
+  const remaining = points.slice(1);
+  const route = [points[0]];
+  let current = points[0];
+  while (remaining.length) {
+    let bestIdx = 0, best = Infinity;
+    for (let i=0;i<remaining.length;i++) {
+      const d = haversine(current, remaining[i]);
+      if (d < best) { best = d; bestIdx = i; }
+    }
+    current = remaining.splice(bestIdx,1)[0];
+    route.push(current);
+  }
+  return route;
+}
+
+// --------------------------- App Shell ---------------------------
+const mods = [
+  { key: "vault", title: "VAULT Mesh", icon: Radio },
+  { key: "memoir", title: "Memoir", icon: PenTool },
+  { key: "snapsec", title: "SnapSec™", icon: Shield },
+  { key: "retail", title: "Retail Access", icon: Store },
+  { key: "eyeem", title: "EYEem", icon: Eye },
+  { key: "teamup", title: "TEAMup", icon: Users },
+  { key: "art", title: "ARt", icon: Waves },
+  { key: "heritage", title: "Prestige Heritage", icon: Crown },
+  { key: "express", title: "EXPRESS", icon: Truck },
+];
+
+export default function SABITX_MVP() {
+  const [tab, setTab] = useLocal("sx_tab", "vault");
+  const ActiveIcon = mods.find(m=>m.key===tab)?.icon ?? Radio;
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <header className="px-6 sm:px-10 pt-6 pb-3 border-b" style={{ borderColor: CARD_BORDER }}>
+        <div className="flex items-center gap-3">
+          <ActiveIcon color={ORANGE} />
+          <h1 className="text-2xl font-semibold" style={{ color: ORANGE }}>SABIT X VAULT</h1>
+          <p className="text-sm" style={{ color: TEXT_MUTED }}>Signal-locked interface. Local-first demo.</p>
+        </div>
+        <nav className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          {mods.map(m => (
+            <button key={m.key} onClick={()=>setTab(m.key)} className={`px-3 py-1.5 rounded-full border text-sm ${tab===m.key?"" : "opacity-75 hover:opacity-100"}`} style={{ borderColor: CARD_BORDER, color: tab===m.key?ORANGE:"#e5e5e5"}}>
+              {m.title}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main className="px-6 sm:px-10 py-6">
+        {tab === "vault" && <VaultMesh />}
+        {tab === "memoir" && <Memoir />}
+        {tab === "snapsec" && <SnapSec />}
+        {tab === "retail" && <RetailAccess />}
+        {tab === "eyeem" && <EyeEm />}
+        {tab === "teamup" && <TEAMup />}
+        {tab === "art" && <ARt />}
+        {tab === "heritage" && <PrestigeHeritage />}
+        {tab === "express" && <EXPRESS />}
+      </main>
+    </div>
+  );
+}
+
+// --------------------------- VAULT Mesh ---------------------------
+// Offline audio notes chat: record clips, label by proximity code, store to IndexedDB-like via localStorage (base64).
+function VaultMesh() {
+  const [clips, setClips] = useLocal("sx_vault_clips", []);
+  const [label, setLabel] = useLocal("sx_vault_label", "NODE-0001");
+  const [rec, setRec] = useState(null);
+  const chunks = useRef([]);
+  const mediaRef = useRef(null);
+  const [recording, setRecording] = useState(false);
+
+  async function start() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const r = new MediaRecorder(stream);
+    chunks.current = [];
+    r.ondataavailable = e => chunks.current.push(e.data);
+    r.onstop = async () => {
+      const blob = new Blob(chunks.current, { type: "audio/webm" });
+      const b64 = await blobToB64(blob);
+      const id = crypto.randomUUID();
+      setClips([{ id, label, createdAt: Date.now(), b64 }, ...clips]);
+      setRecording(false);
+    };
+    setRec(r); r.start(); setRecording(true);
+  }
+  function stop() { rec?.stop(); rec?.stream.getTracks().forEach(t=>t.stop()); }
+
+  return (
+    <Section title="VAULT Mesh" subtitle="Offline audio chat. Air-gapped. Local storage only.">
+      <div className="flex items-center gap-3 mb-4">
+        <input className="bg-black border rounded px-3 py-2 w-48" style={{ borderColor: CARD_BORDER }} value={label} onChange={e=>setLabel(e.target.value)} />
+        {!recording ? (
+          <button onClick={start} className="px-3 py-2 rounded border flex items-center gap-2" style={{ borderColor: CARD_BORDER, color: ORANGE }}><Mic size={16}/> Record</button>
+        ) : (
+          <button onClick={stop} className="px-3 py-2 rounded border flex items-center gap-2" style={{ borderColor: CARD_BORDER, color: "#ff3b3b" }}><Pause size={16}/> Stop</button>
+        )}
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {clips.map(c => (
+          <div key={c.id} className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <div className="flex items-center justify-between mb-2"><span style={{ color: ORANGE }}>{c.label}</span><span className="text-xs" style={{ color: TEXT_MUTED }}>{new Date(c.createdAt).toLocaleString()}</span></div>
+            <audio controls src={c.b64} className="w-full" />
+            <div className="mt-3 text-xs" style={{ color: TEXT_MUTED }}>Stored locally. Share by exporting file.</div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function blobToB64(blob) {
+  return new Promise(res => { const r = new FileReader(); r.onload = ()=>res(r.result); r.readAsDataURL(blob); });
+}
+
+// --------------------------- Memoir ---------------------------
+function Memoir() {
+  const [text, setText] = useLocal("sx_memoir_md", "# Out of Place, Out of Time\n\nStart here. Raw, unfiltered.");
+  function exportTxt(){ download(`memoir-${Date.now()}.md`, text); }
+  return (
+    <Section title="Memoir" subtitle="Chronicles of the maker. Raw and untamed.">
+      <div className="flex gap-2 mb-3">
+        <button onClick={exportTxt} className="px-3 py-2 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}><Download size={16}/> Export .md</button>
+      </div>
+      <textarea value={text} onChange={e=>setText(e.target.value)} className="w-full h-[50vh] bg-black border rounded p-3" style={{ borderColor: CARD_BORDER }} />
+      <div className="mt-4 prose prose-invert max-w-none"><Markdown src={text} /></div>
+    </Section>
+  );
+}
+
+// Lightweight markdown renderer
+function Markdown({ src }){
+  const html = useMemo(()=>src
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+    .replace(/\n$/gim, '<br/>')
+  ,[src]);
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+// --------------------------- SnapSec ---------------------------
+function SnapSec(){
+  const [store, setStore] = useLocal("sx_snapsec", { items: [], enc: null });
+  const [keyB64, setKeyB64] = useLocal("sx_snapsec_key", "");
+  const [unlocked, setUnlocked] = useState(false);
+  const [tempItems, setTempItems] = useState([]);
+
+  async function createKey(){ const { b64 } = await generateKey(); setKeyB64(b64); alert("Key generated. Keep it safe."); }
+  async function lock(){
+    const key = await importKey(keyB64);
+    const enc = await encryptJson(key, tempItems);
+    setStore({ enc }); setTempItems([]); setUnlocked(false);
+  }
+  async function unlock(){
+    try{
+      const key = await importKey(keyB64);
+      const items = await decryptJson(key, store.enc);
+      setTempItems(items); setUnlocked(true);
+    }catch{ alert("Bad key or data"); }
+  }
+  function addItem(){
+    const site = prompt("Label/site"); const user = prompt("User"); const secret = prompt("Secret");
+    if(!site) return; setTempItems([{ id: crypto.randomUUID(), site, user, secret }, ...tempItems]);
+  }
+
+  // Camera scanner using BarcodeDetector if supported
+  const videoRef = useRef(null);
+  const [scanning, setScanning] = useState(false);
+  async function scan(){
+    if(!('BarcodeDetector' in window)) { alert('BarcodeDetector not supported. Paste key manually.'); return; }
+    setScanning(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const v = videoRef.current; v.srcObject = stream; await v.play();
+    const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+    let running = true;
+    const tick = async () => {
+      if(!running) return;
+      const codes = await det.detect(v).catch(()=>[]);
+      if(codes && codes[0]){ setKeyB64(codes[0].rawValue); running=false; stop(); }
+      else requestAnimationFrame(tick);
+    }; tick();
+    function stop(){ stream.getTracks().forEach(t=>t.stop()); setScanning(false); }
+  }
+
+  return (
+    <Section title="SnapSec™" subtitle="Tap-to-lock. Scan-to-reveal. Personal security toolkit.">
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <h3 className="font-semibold mb-2">Key</h3>
+          <div className="flex gap-2 mb-2">
+            <button onClick={createKey} className="px-3 py-2 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Generate</button>
+            <button onClick={scan} className="px-3 py-2 rounded border text-sm flex items-center gap-2" style={{ borderColor: CARD_BORDER, color: ORANGE }}><Camera size={16}/> Scan QR</button>
+          </div>
+          <textarea className="w-full bg-black border rounded p-2 text-xs" style={{ borderColor: CARD_BORDER }} value={keyB64} onChange={e=>setKeyB64(e.target.value)} placeholder="Paste or scan key..." />
+          {scanning && <video ref={videoRef} className="mt-2 w-full rounded" />}
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <h3 className="font-semibold mb-2">Vault</h3>
+          {!unlocked ? (
+            <div className="flex gap-2">
+              <button onClick={unlock} className="px-3 py-2 rounded border" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Unlock</button>
+              <button onClick={()=>alert('Generate or paste key, then Unlock.')} className="px-3 py-2 rounded border" style={{ borderColor: CARD_BORDER }}>Help</button>
+            </div>
+          ):(
+            <div>
+              <div className="flex gap-2 mb-3">
+                <button onClick={addItem} className="px-3 py-2 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Add</button>
+                <button onClick={lock} className="px-3 py-2 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Lock</button>
+              </div>
+              <ul className="space-y-2">
+                {tempItems.map(i=> (
+                  <li key={i.id} className="border rounded p-2" style={{ borderColor: CARD_BORDER }}>
+                    <div className="text-sm"><b>{i.site}</b> — {i.user}</div>
+                    <div className="text-xs" style={{ color: TEXT_MUTED }}>{i.secret}</div>
+                  </li>
+                ))}
+                {tempItems.length===0 && <div className="text-sm" style={{ color: TEXT_MUTED }}>Empty. Add entries, then Lock to re-encrypt.</div>}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// --------------------------- Retail Access ---------------------------
+function RetailAccess(){
+  const [inv, setInv] = useLocal("sx_retail_inv", [
+    { id: "sku001", name: "Water 16oz", price: 1.25, stock: 50 },
+    { id: "sku002", name: "Chips", price: 1.99, stock: 30 },
+  ]);
+  const [cart, setCart] = useState([]);
+  const [tax, setTax] = useLocal("sx_retail_tax", 0.0825);
+
+  function addToCart(item){ setCart(c=>[{...item, qty:1}, ...c]); }
+  function total(){ const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0); return { subtotal, tax: subtotal*tax, grand: subtotal*(1+tax) }; }
+  function checkout(){
+    // reduce stock
+    const next = [...inv];
+    for(const c of cart){ const idx = next.findIndex(x=>x.id===c.id); if(idx>-1) next[idx].stock=Math.max(0,next[idx].stock-c.qty); }
+    setInv(next); setCart([]);
+  }
+
+  return (
+    <Section title="Retail Access" subtitle="POS, inventory, automation. Rewired.">
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <div className="flex items-center justify-between mb-3"><h3 className="font-semibold">Inventory</h3><span className="text-xs" style={{ color: TEXT_MUTED }}>Tap to add</span></div>
+          <ul className="space-y-2">
+            {inv.map(it=> (
+              <li key={it.id} className="border rounded p-2 flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
+                <div>
+                  <div className="text-sm font-medium">{it.name}</div>
+                  <div className="text-xs" style={{ color: TEXT_MUTED }}>${it.price.toFixed(2)} • stock {it.stock}</div>
+                </div>
+                <button onClick={()=>addToCart(it)} className="px-3 py-1 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Add</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <h3 className="font-semibold mb-2">Cart</h3>
+          {cart.length===0 ? <div className="text-sm" style={{ color: TEXT_MUTED }}>Empty</div> : (
+            <>
+              <ul className="space-y-2 mb-3">
+                {cart.map((c,ix)=> (
+                  <li key={ix} className="border rounded p-2 flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
+                    <div className="text-sm">{c.name}</div>
+                    <div className="flex items-center gap-2">
+                      <input type="number" min={1} value={c.qty} onChange={e=>{
+                        const v = Math.max(1, Number(e.target.value));
+                        setCart(prev=>prev.map((p,i)=> i===ix?{...p, qty:v}:p));
+                      }} className="w-16 bg-black border rounded px-2 py-1" style={{ borderColor: CARD_BORDER }} />
+                      <div>${(c.price*c.qty).toFixed(2)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Totals tax={tax} setTax={setTax} totals={total()} onPay={checkout} />
+            </>
+          )}
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function Totals({ tax, setTax, totals, onPay }){
+  return (
+    <div>
+      <div className="text-sm" style={{ color: TEXT_MUTED }}>Tax rate: <input type="number" step="0.0001" className="w-24 bg-black border rounded px-2 py-1" style={{ borderColor: CARD_BORDER }} value={tax} onChange={e=>setTax(Number(e.target.value))}/> </div>
+      <div className="mt-2 text-sm">Subtotal ${totals.subtotal.toFixed(2)}</div>
+      <div className="text-sm">Tax ${totals.tax.toFixed(2)}</div>
+      <div className="text-lg font-semibold">Total ${totals.grand.toFixed(2)}</div>
+      <button onClick={onPay} className="mt-3 px-3 py-2 rounded border" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Checkout</button>
+    </div>
+  );
+}
+
+// --------------------------- EYEem ---------------------------
+// Client-side visual notes: tag images, quick search, basic filters.
+function EyeEm(){
+  const [items, setItems] = useLocal("sx_eyeem", []); // {id, name, tags[], dataURL}
+  const [query, setQuery] = useState("");
+  function onPick(e){
+    const file = e.target.files?.[0]; if(!file) return;
+    const fr = new FileReader();
+    fr.onload = ()=> setItems(prev=>[{ id: crypto.randomUUID(), name: file.name, tags: [], dataURL: fr.result }, ...prev]);
+    fr.readAsDataURL(file);
+  }
+  function addTag(id){ const t = prompt("Tag"); if(!t) return; setItems(prev=>prev.map(x=> x.id===id?{...x, tags:[...x.tags, t]}:x)); }
+  const filtered = items.filter(i=> (i.name+" "+i.tags.join(" ")).toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <Section title="EYEem" subtitle="AI visual engine (local demo: tagged search & filters).">
+      <div className="flex items-center gap-2 mb-3">
+        <label className="px-3 py-2 rounded border text-sm cursor-pointer" style={{ borderColor: CARD_BORDER, color: ORANGE }}>
+          <Upload size={16} className="inline mr-2"/> Upload
+          <input type="file" className="hidden" accept="image/*" onChange={onPick} />
+        </label>
+        <input placeholder="Search" value={query} onChange={e=>setQuery(e.target.value)} className="bg-black border rounded px-3 py-2 w-64" style={{ borderColor: CARD_BORDER }} />
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map(i=> (
+          <div key={i.id} className="rounded-xl p-3" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <img src={i.dataURL} alt={i.name} className="w-full h-48 object-cover rounded" />
+            <div className="mt-2 text-sm font-medium">{i.name}</div>
+            <div className="mt-1 flex flex-wrap gap-1 text-xs">
+              {i.tags.map((t,ix)=>(<span key={ix} className="px-2 py-0.5 rounded-full border" style={{ borderColor: CARD_BORDER, color: ORANGE }}>{t}</span>))}
+              <button onClick={()=>addTag(i.id)} className="ml-auto text-xs underline">add tag</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+// --------------------------- TEAMup ---------------------------
+// Local mission control: tasks, roles, BroadcastChannel for multi-tab sync.
+function TEAMup(){
+  const [tasks, setTasks] = useLocal("sx_team_tasks", []); // {id,title,owner,status}
+  const [newTitle, setNewTitle] = useState("");
+  const chRef = useRef(null);
+  useEffect(()=>{
+    const ch = new BroadcastChannel("sx_team"); chRef.current = ch;
+    ch.onmessage = (ev)=>{ if(ev.data?.type==='sync') setTasks(ev.data.tasks); };
+    return ()=> ch.close();
+  },[]);
+  function add(){ if(!newTitle) return; const next=[{id:crypto.randomUUID(), title:newTitle, owner:"SABITX", status:"Open"}, ...tasks]; setTasks(next); chRef.current?.postMessage({type:'sync', tasks:next}); setNewTitle(""); }
+  function setStatus(id, status){ const next=tasks.map(t=>t.id===id?{...t,status}:t); setTasks(next); chRef.current?.postMessage({type:'sync', tasks:next}); }
+
+  return (
+    <Section title="TEAMup" subtitle="Crew sync: messages, ops, and mission control (this tab demo).">
+      <div className="flex gap-2 mb-3">
+        <input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Task" className="bg-black border rounded px-3 py-2" style={{ borderColor: CARD_BORDER }} />
+        <button onClick={add} className="px-3 py-2 rounded border" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Add</button>
+      </div>
+      <ul className="space-y-2">
+        {tasks.map(t=> (
+          <li key={t.id} className="border rounded p-3 flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
+            <div>
+              <div className="text-sm font-medium">{t.title}</div>
+              <div className="text-xs" style={{ color: TEXT_MUTED }}>Owner: {t.owner}</div>
+            </div>
+            <select value={t.status} onChange={e=>setStatus(t.id, e.target.value)} className="bg-black border rounded px-2 py-1" style={{ borderColor: CARD_BORDER }}>
+              <option>Open</option><option>In Progress</option><option>Blocked</option><option>Done</option>
+            </select>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+// --------------------------- ARt ---------------------------
+function ARt(){
+  const canvasRef = useRef(null);
+  useEffect(()=>{
+    const c = canvasRef.current; const ctx = c.getContext('2d'); let t=0, raf;
+    function draw(){
+      const w=c.width=c.clientWidth, h=c.height=c.clientHeight; t+=0.01; ctx.fillStyle='black'; ctx.fillRect(0,0,w,h);
+      for(let i=0;i<300;i++){
+        const x = (i/300)*w; const y = h/2 + Math.sin(i*0.12+t)*h*0.18 + Math.sin(i*0.03+ t*3)*10;
+        const s = 1 + 0.5*Math.sin(t*3+i);
+        ctx.fillStyle = `rgba(255,106,0,${0.25+0.75*Math.sin(i*0.02+t)*0.5+0.5})`;
+        ctx.beginPath(); ctx.arc(x,y, s, 0, Math.PI*2); ctx.fill();
+      }
+      raf=requestAnimationFrame(draw);
+    }
+    draw(); return ()=> cancelAnimationFrame(raf);
+  },[]);
+  return (
+    <Section title="ARt" subtitle="Sonic visuals. Generative aesthetics. Fractals & chaos.">
+      <div className="rounded-xl" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}`, height: 360 }}>
+        <canvas ref={canvasRef} className="w-full h-full" />
+      </div>
+    </Section>
+  );
+}
+
+// --------------------------- Prestige Heritage ---------------------------
+function PrestigeHeritage(){
+  const [events, setEvents] = useLocal("sx_heritage", [
+    { id: "e1", date: "2016-01-10", title: "Origin spark", body: "Silence forged the edge." },
+    { id: "e2", date: "2022-12-19", title: "SABIT X PLLC formed", body: "Filing 804847386." },
+  ]);
+  function add(){ const title=prompt("Title"), date=prompt("Date YYYY-MM-DD"), body=prompt("Note"); if(!title||!date) return; setEvents([{id:crypto.randomUUID(), date, title, body}, ...events]); }
+  return (
+    <Section title="Prestige Heritage" subtitle="Origin story of SABITX. From ashes to override.">
+      <button onClick={add} className="px-3 py-2 rounded border mb-3" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Add event</button>
+      <ul className="space-y-3">
+        {events.sort((a,b)=> b.date.localeCompare(a.date)).map(e=> (
+          <li key={e.id} className="border rounded p-3" style={{ borderColor: CARD_BORDER }}>
+            <div className="text-sm" style={{ color: ORANGE }}>{e.date}</div>
+            <div className="font-medium">{e.title}</div>
+            <div className="text-sm" style={{ color: TEXT_MUTED }}>{e.body}</div>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+// --------------------------- EXPRESS ---------------------------
+function EXPRESS(){
+  const [stops, setStops] = useLocal("sx_express_stops", [
+    { id: "A", name: "Deport, TX", lat: 33.525, lon: -95.312 },
+    { id: "B", name: "Hugo, OK", lat: 34.014, lon: -95.509 },
+    { id: "C", name: "Dallas, TX", lat: 32.897, lon: -96.901 },
+  ]);
+  const route = nearestNeighborRoute(stops);
+  const [events, setEvents] = useLocal("sx_express_events", []);
+
+  function addStop(){ const name=prompt("Stop name"); const lat=Number(prompt("Lat")); const lon=Number(prompt("Lon")); if(!name||isNaN(lat)||isNaN(lon)) return; setStops([...stops, { id: crypto.randomUUID(), name, lat, lon }]); }
+  function exportICS(){ const ics = toICS(events); download(`express-${Date.now()}.ics`, ics); }
+  function addEvent(){
+    const title=prompt("Title"); const start=prompt("Start (YYYY-MM-DDTHH:MM)"); const end=prompt("End (YYYY-MM-DDTHH:MM)"); const location=prompt("Location (optional)");
+    if(!title||!start||!end) return; setEvents([{ id: crypto.randomUUID(), title, start, end, location }, ...events]);
+  }
+
+  const totalKm = route.reduce((s,cur,i)=> i? s + haversine(route[i-1], cur) : 0, 0);
+
+  return (
+    <Section title="EXPRESS" subtitle="Ultrafast logistics and scheduling tools.">
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold">Route planner</h3>
+            <button onClick={addStop} className="px-3 py-1.5 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}>Add stop</button>
+          </div>
+          <ol className="space-y-2">
+            {route.map((s,ix)=> (
+              <li key={s.id} className="border rounded p-2 flex items-center gap-2" style={{ borderColor: CARD_BORDER }}>
+                <span className="text-xs px-2 py-0.5 rounded-full border" style={{ borderColor: CARD_BORDER, color: ORANGE }}>{ix+1}</span>
+                <div className="text-sm font-medium">{s.name}</div>
+                <div className="ml-auto text-xs" style={{ color: TEXT_MUTED }}>{s.lat.toFixed(3)}, {s.lon.toFixed(3)}</div>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-3 text-sm">Approx distance: {totalKm.toFixed(1)} km</div>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <div className="flex items-center justify-between mb-2"><h3 className="font-semibold">Schedule</h3>
+            <div className="flex gap-2">
+              <button onClick={addEvent} className="px-3 py-1.5 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}><Calendar size={14}/> Add</button>
+              <button onClick={exportICS} className="px-3 py-1.5 rounded border text-sm" style={{ borderColor: CARD_BORDER, color: ORANGE }}><Download size={14}/> Export .ics</button>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {events.map(e=> (
+              <li key={e.id} className="border rounded p-2" style={{ borderColor: CARD_BORDER }}>
+                <div className="font-medium text-sm">{e.title}</div>
+                <div className="text-xs" style={{ color: TEXT_MUTED }}>{new Date(e.start).toLocaleString()} → {new Date(e.end).toLocaleString()}</div>
+                {e.location && <div className="text-xs flex items-center gap-1" style={{ color: TEXT_MUTED }}><MapPin size={12}/>{e.location}</div>}
+              </li>
+            ))}
+            {events.length===0 && <div className="text-sm" style={{ color: TEXT_MUTED }}>No events yet.</div>}
+          </ul>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// --------------------------- Section Shell ---------------------------
+function Section({ title, subtitle, children }){
+  return (
+    <section>
+      <div className="mb-4">
+        <h2 className="text-2xl font-semibold" style={{ color: ORANGE }}>{title}</h2>
+        <p className="text-sm" style={{ color: TEXT_MUTED }}>{subtitle}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
