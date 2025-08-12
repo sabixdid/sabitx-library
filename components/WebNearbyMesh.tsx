@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useRef, useState } from "react";
-import WebQRMesh from "./WebQRMesh"; // existing QR P2P component
+import WebQRMesh from "./WebQRMesh";
 import UltrasoundHandshake from "./handshake/UltrasoundHandshake";
 
 export default function WebNearbyMesh() {
