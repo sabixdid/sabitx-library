@@ -1,4 +1,4 @@
-import { LibraryGrid } from '../../components/LibraryGrid';
+import LibraryGrid from '../../components/LibraryGrid';
 
 export default function LibraryHome() {
   return (
