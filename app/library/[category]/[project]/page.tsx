@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
-import { ProjectHeader } from '../../../components/ProjectHeader';
-import { UploadBox } from '../../../components/UploadBox';
-import { EvidenceTable } from '../../../components/EvidenceTable';
-import { supabaseAdmin } from '../../../lib/db';
+import { ProjectHeader } from '../../../../components/ProjectHeader';
+import { UploadBox } from '../../../../components/UploadBox';
+import { EvidenceTable } from '../../../../components/EvidenceTable';
+import { supabaseAdmin } from '../../../../lib/db';
 
 const allowed: Record<string, string[]> = {
   legal: ['denton','deandra','ice'],
